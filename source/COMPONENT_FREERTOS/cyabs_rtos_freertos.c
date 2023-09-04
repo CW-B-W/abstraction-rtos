@@ -368,7 +368,7 @@ cy_rslt_t cy_rtos_thread_set_notification(cy_thread_t* thread)
             BaseType_t taskWoken = pdFALSE;
             /* No error checking as this function always returns pdPASS. */
             vTaskNotifyGiveFromISR(*thread, &taskWoken);
-            portEND_SWITCHING_ISR(taskWoken);
+            portYIELD_FROM_ISR(taskWoken);
         }
         else
         {
@@ -397,6 +397,7 @@ cy_rslt_t cy_rtos_thread_get_name(cy_thread_t* thread, const char** thread_name)
 static uint16_t _cy_rtos_suspend_count = 0;
 static uint16_t _cy_rtos_suspend_count_from_ISR = 0;
 UBaseType_t uxSavedInterruptStatus[CY_RTOS_MAX_SUSPEND_NESTING];
+static portMUX_TYPE _cy_rtos_scheduler_mutex = portMUX_INITIALIZER_UNLOCKED;
 //--------------------------------------------------------------------------------------------------
 // cy_rtos_scheduler_suspend
 //--------------------------------------------------------------------------------------------------
@@ -417,7 +418,7 @@ cy_rslt_t cy_rtos_scheduler_suspend(void)
     }
     else
     {
-        taskENTER_CRITICAL();
+        taskENTER_CRITICAL(&_cy_rtos_scheduler_mutex);
     }
 
     if (status == CY_RSLT_SUCCESS)
@@ -453,7 +454,7 @@ cy_rslt_t cy_rtos_scheduler_resume(void)
         }
         else
         {
-            taskEXIT_CRITICAL();
+            taskEXIT_CRITICAL(&_cy_rtos_scheduler_mutex);
             status = CY_RSLT_SUCCESS;
         }
         --_cy_rtos_suspend_count;

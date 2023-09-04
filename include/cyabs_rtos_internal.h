@@ -30,9 +30,6 @@ extern "C" {
 #endif
 
 #include <stdbool.h>
-#if !defined (COMPONENT_CAT5)
-#include <cmsis_compiler.h>
-#endif
 
 /** Checks to see if code is currently executing within an interrupt context.
  *
@@ -40,16 +37,7 @@ extern "C" {
  */
 static inline bool is_in_isr(void)
 {
-    #if defined(COMPONENT_CR4) // Can work for any Cortex-A & Cortex-R
-    uint32_t mode = __get_mode();
-    return (mode == 0x11U /*FIQ*/) || (mode == 0x12U /*IRQ*/) || (mode == 0x13U /*SVC*/) ||
-           (mode == 0x17U /*ABT*/) || (mode == 0x1BU /*UND*/);
-    #elif defined(COMPONENT_CAT5)
-    // This device does not allow calling from interrupt context.
-    return false;
-    #else // Cortex-M
-    return (__get_IPSR() != 0);
-    #endif
+    return xPortInIsrContext();
 }
 
 
